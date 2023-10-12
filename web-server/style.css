@@ -24,23 +24,34 @@ header {
     justify-content: center;
     align-items: center;
     height: 90svh;
+    grid-template-columns: 1fr 1fr;
 }
 
 #grid {
     display: grid;
+    justify-self: center;
     grid-template-columns: repeat(16, 1fr);
     grid-template-rows: repeat(16, 1fr);
     width: clamp(320px, 50vw, 550px);
     height: clamp(320px, 50vw, 550px);
-    border: 1px solid #0c0c0c;
+    background-color: #0c0c0c;
+    padding: 5px;
+    gap: 5px;
 }
 
-.grid-item {
+.grid-cell {
     border: 1px solid #ccc;
     background-color: white;
+    border-radius: 10%;
     user-select: none;
 }
 
-.grid-item:hover {
+.grid-cell:hover {
     background-color: rgb(224, 224, 224);
+}
+
+@media only screen and (max-width: 768px) {
+    #content {
+        grid-template-columns: 1fr;
+    }
 }
