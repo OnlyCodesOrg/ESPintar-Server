@@ -7,14 +7,13 @@ body {
         sans-serif;
     background-color: #222222;
     color: #ffffff;
-    min-height: 100vh;
 }
 
 header {
     display: flex;
     background: #0c0c0c;
     color: white;
-    height: 10vh;
+    height: 10svh;
     align-items: center;
     justify-content: center;
     font-weight: 800;
@@ -24,19 +23,24 @@ header {
     display: grid;
     justify-content: center;
     align-items: center;
-    height: 100%;
+    height: 90svh;
 }
 
 #grid {
     display: grid;
     grid-template-columns: repeat(16, 1fr);
     grid-template-rows: repeat(16, 1fr);
-    width: clamp(300px, 50vw, 600px);
-    height: clamp(300px, 50vw, 600px);
+    width: clamp(320px, 50vw, 550px);
+    height: clamp(320px, 50vw, 550px);
     border: 1px solid #0c0c0c;
 }
 
 .grid-item {
     border: 1px solid #ccc;
     background-color: white;
+    user-select: none;
+}
+
+.grid-item:hover {
+    background-color: rgb(224, 224, 224);
 }
