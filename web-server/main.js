@@ -5,6 +5,17 @@ for (let i = 0; i < 16 * 16; i++) {
     const cell = document.createElement("div");
     cell.classList.add("grid-cell");
     cell.id = `cell-${i}`;
+
+    cell.addEventListener("mousedown", (e) => {
+        cell.style.backgroundColor = selectedColor;
+    });
+
+    cell.addEventListener("mouseover", (e) => {
+        if (e.buttons === 1) {
+            cell.style.backgroundColor = selectedColor;
+        }
+    });
+
     grid.appendChild(cell);
 }
 
@@ -39,6 +50,12 @@ for (let i = 0; i < 24; i++) {
     const colorCell = document.createElement("div");
     colorCell.classList.add("color-cell");
     colorCell.id = `color-${i}`;
+
     colorCell.style.backgroundColor = colors[i];
+    colorCell.addEventListener("mousedown", () => {
+        selectedColor = `${colors[i]}`;
+        console.log(selectedColor);
+    });
+
     controls.appendChild(colorCell);
 }
