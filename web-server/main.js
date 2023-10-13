@@ -96,6 +96,7 @@ for (let i = 0; i < 24; i++) {
 
 const eraser = document.getElementById("eraser");
 const clear = document.getElementById("clear");
+const colorPicker = document.getElementById("color-picker");
 
 eraser.addEventListener("mousedown", () => {
     selectedColor = "ERASER";
@@ -105,4 +106,9 @@ clear.addEventListener("mousedown", () => {
     grid.childNodes.forEach((cell) => {
         cell.style.backgroundColor = "";
     });
+});
+
+colorPicker.addEventListener("input", (e) => {
+    selectedColor = e.target.value;
+    console.log(selectedColor);
 });
