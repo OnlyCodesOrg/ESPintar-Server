@@ -1,0 +1,23 @@
+#controls-container {
+    display: grid;
+    background-color: #0c0c0c;
+    display: flex;
+    min-width: 200px;
+    padding: 5px;
+    justify-content: center;
+}
+
+#controls {
+    display: grid;
+    border-radius: 5px;
+    width: 80%;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+}
+
+.color-cell {
+    aspect-ratio: 1;
+}
+
+.color-cell:hover {
+    border: solid 2px #ffffff;
+}
