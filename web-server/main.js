@@ -6,35 +6,23 @@ for (let i = 0; i < 16 * 16; i++) {
     const cell = document.createElement("div");
     cell.classList.add("grid-cell");
     cell.id = `cell-${i}`;
+    grid.appendChild(cell);
+
+    const applyColor = () => {
+        cell.style.backgroundColor = selectedColor;
+    };
 
     // Desktop drawing
-    cell.addEventListener("mousedown", (e) => {
-        cell.style.backgroundColor = selectedColor;
-    });
-
+    cell.addEventListener("mousedown", applyColor);
     cell.addEventListener("mouseover", (e) => {
-        if (e.buttons === 1) {
-            cell.style.backgroundColor = selectedColor;
-        }
+        if (e.buttons === 1) applyColor(); // Check hover and mouse click
     });
-
-    cell.addEventListener("touchstart", () => {
-        cell.style.backgroundColor = selectedColor;
-    });
-
-    cell.addEventListener("touchmove", () => {
-        cell.style.backgroundColor = selectedColor;
-    });
-
-    // Append cell
-    grid.appendChild(cell);
 }
 
 // Mobile drawing
 function draw(touch) {
     const cell = document.elementFromPoint(touch.clientX, touch.clientY);
-
-    if (cell && cell.classList.contains("grid-cell")) {
+    if (cell.classList.contains("grid-cell")) {
         cell.style.backgroundColor = selectedColor;
     }
 }
@@ -45,10 +33,9 @@ grid.addEventListener("touchstart", (e) => {
 });
 
 grid.addEventListener("touchmove", (e) => {
-    e.preventDefault(); // Prevent scroll to refresh
-    if (isDrawing) {
-        draw(e.touches[0]);
-    }
+    if (e.touches.length >= 2) return; // Allow zoom
+    e.preventDefault();
+    if (isDrawing) draw(e.touches[0]);
 });
 
 grid.addEventListener("touchend", () => {
