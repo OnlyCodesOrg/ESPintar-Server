@@ -44,4 +44,8 @@ header {
     #content {
         grid-template-columns: 1fr;
     }
+
+    #grid-container {
+        grid-row: 1;
+    }
 }

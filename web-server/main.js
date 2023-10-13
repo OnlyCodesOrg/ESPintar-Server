@@ -1,5 +1,16 @@
 const grid = document.getElementById("grid");
 const controls = document.getElementById("controls");
+let selectedColor = "";
+
+const applyColor = (cell) => {
+    switch (selectedColor) {
+        case "ERASER":
+            cell.style.backgroundColor = "";
+
+        default:
+            cell.style.backgroundColor = selectedColor;
+    }
+};
 
 for (let i = 0; i < 16 * 16; i++) {
     // Create cells
@@ -8,24 +19,20 @@ for (let i = 0; i < 16 * 16; i++) {
     cell.id = `cell-${i}`;
     grid.appendChild(cell);
 
-    const applyColor = () => {
-        cell.style.backgroundColor = selectedColor;
-    };
-
     // Desktop drawing
-    cell.addEventListener("mousedown", applyColor);
+    cell.addEventListener("mousedown", () => applyColor(cell));
     cell.addEventListener("mouseover", (e) => {
-        if (e.buttons === 1) applyColor(); // Check hover and mouse click
+        if (e.buttons === 1) applyColor(cell); // Check hover and mouse click
     });
 }
 
 // Mobile drawing
-function draw(touch) {
+const draw = (touch) => {
     const cell = document.elementFromPoint(touch.clientX, touch.clientY);
     if (cell.classList.contains("grid-cell")) {
-        cell.style.backgroundColor = selectedColor;
+        applyColor(cell);
     }
-}
+};
 
 grid.addEventListener("touchstart", (e) => {
     isDrawing = true;
@@ -48,7 +55,7 @@ const colors = {
     0: "#000000",
     1: "#232035",
     2: "#44293c",
-    3: "#673930",
+    3: "#ff0000",
     4: "#df7027",
     5: "#d8a067",
     6: "#efc39b",
@@ -84,3 +91,18 @@ for (let i = 0; i < 24; i++) {
 
     controls.appendChild(colorCell);
 }
+
+/* Botones Controles*/
+
+const eraser = document.getElementById("eraser");
+const clear = document.getElementById("clear");
+
+eraser.addEventListener("mousedown", () => {
+    selectedColor = "ERASER";
+});
+
+clear.addEventListener("mousedown", () => {
+    grid.childNodes.forEach((cell) => {
+        cell.style.backgroundColor = "";
+    });
+});
