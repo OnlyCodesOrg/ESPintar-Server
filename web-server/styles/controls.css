@@ -1,0 +1,40 @@
+#controls-container {
+    background-color: #0c0c0c;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    width: 80%;
+    justify-self: center;
+    padding: 5px;
+    justify-content: center;
+    gap: 10px;
+}
+
+#controls {
+    display: grid;
+    border-radius: 5px;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+}
+
+.color-cell {
+    aspect-ratio: 1;
+}
+
+.color-cell:hover {
+    border: solid 2px #ffffff;
+}
+
+.controls-btn-container {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.controls-btn {
+    display: flex;
+    width: 5rem;
+    justify-self: center;
+    justify-content: center;
+    width: 90%;
+}
