@@ -100,15 +100,17 @@ const eraser = document.getElementById("eraser");
 const clear = document.getElementById("clear");
 const colorPicker = document.getElementById("color-picker");
 
+const clearScreen = () => {
+    grid.childNodes.forEach((cell) => {
+        cell.style.backgroundColor = "";
+    });
+};
+
 eraser.addEventListener("mousedown", () => {
     selectedColor = "ERASER";
 });
 
-clear.addEventListener("mousedown", () => {
-    grid.childNodes.forEach((cell) => {
-        cell.style.backgroundColor = "";
-    });
-});
+clear.addEventListener("mousedown", clearScreen);
 
 colorPicker.addEventListener("input", (e) => {
     selectedColor = e.target.value;
@@ -121,16 +123,16 @@ function saveGridData() {
     const gridData = [];
     let k = 0;
 
-    for (let i = 0; i < gridSize; i++) {
-        let row = [];
+    for (i = 0; i < gridSize; i++) {
+        for (j = 0; j < gridSize; j++) {
+            let color = grid.childNodes[k].style.backgroundColor;
 
-        for (let j = 0; j < gridSize; j++) {
-            let cell = grid.childNodes[k].style.backgroundColor;
-            row.push(cell);
+            if (color) {
+                gridData.push([[i, j], color]);
+            }
+
             k++;
         }
-
-        gridData.push(row);
     }
 
     return JSON.stringify(gridData);
@@ -164,15 +166,12 @@ function loadGridData(gridDataJSON) {
     const gridData = JSON.parse(gridDataJSON);
     console.log(gridData);
 
-    let k = 0;
+    clearScreen();
 
-    for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-            let cell = grid.childNodes[k];
-            cell.style.backgroundColor = gridData[i][j];
-            k++;
-        }
-    }
+    gridData.forEach((cell) => {
+        let pos = cell[0][0] * gridSize + cell[0][1];
+        grid.childNodes[pos].style.backgroundColor = cell[1];
+    });
 }
 
 function loadGridDataFromFile(file) {
