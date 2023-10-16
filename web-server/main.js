@@ -1,3 +1,5 @@
+const gridSize = 16;
+
 const grid = document.getElementById("grid");
 const controls = document.getElementById("controls");
 let selectedColor = "";
@@ -12,7 +14,7 @@ const applyColor = (cell) => {
     }
 };
 
-for (let i = 0; i < 16 * 16; i++) {
+for (let i = 0; i < gridSize * gridSize; i++) {
     // Create cells
     const cell = document.createElement("div");
     cell.classList.add("grid-cell");
@@ -111,4 +113,84 @@ clear.addEventListener("mousedown", () => {
 colorPicker.addEventListener("input", (e) => {
     selectedColor = e.target.value;
     console.log(selectedColor);
+});
+
+/* Save grid */
+
+function saveGridData() {
+    const gridData = [];
+    let k = 0;
+
+    for (let i = 0; i < gridSize; i++) {
+        let row = [];
+
+        for (let j = 0; j < gridSize; j++) {
+            let cell = grid.childNodes[k].style.backgroundColor;
+            row.push(cell);
+            k++;
+        }
+
+        gridData.push(row);
+    }
+
+    return JSON.stringify(gridData);
+}
+
+const saveButton = document.getElementById("save-btn");
+
+saveButton.addEventListener("click", () => {
+    const gridDataJSON = saveGridData();
+    const blob = new Blob([gridDataJSON], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    // Create a link to download the file
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "gridData.json";
+    a.style.display = "none";
+    document.body.appendChild(a);
+
+    // Trigger a click event to download the file
+    a.click();
+
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+/* Load grid */
+
+function loadGridData(gridDataJSON) {
+    const gridData = JSON.parse(gridDataJSON);
+    console.log(gridData);
+
+    let k = 0;
+
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            let cell = grid.childNodes[k];
+            cell.style.backgroundColor = gridData[i][j];
+            k++;
+        }
+    }
+}
+
+function loadGridDataFromFile(file) {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+        const gridDataJSON = event.target.result;
+        loadGridData(gridDataJSON);
+    };
+
+    reader.readAsText(file);
+}
+
+const loadInput = document.getElementById("load-input");
+
+loadInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        loadGridDataFromFile(file);
+    }
 });
