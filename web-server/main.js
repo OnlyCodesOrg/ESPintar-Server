@@ -1,5 +1,6 @@
 const gridSize = 16;
 
+const root = document.documentElement;
 const grid = document.getElementById("grid");
 const controls = document.getElementById("controls");
 let selectedColor = "";
@@ -56,7 +57,7 @@ grid.addEventListener("touchend", () => {
 /* Color Selector */
 
 const colors = {
-    0: "#000000",
+    0: "#ffffff",
     1: "#232035",
     2: "#44293c",
     3: "#ff0000",
@@ -91,7 +92,7 @@ const createColorsGrid = (() => {
         colorCell.style.backgroundColor = colors[i];
         colorCell.addEventListener("mousedown", () => {
             selectedColor = `${colors[i]}`;
-            console.log(selectedColor);
+            root.style.setProperty("--selected-color", `${colors[i]}`);
         });
 
         controls.appendChild(colorCell);
@@ -112,13 +113,14 @@ const clearScreen = () => {
 
 eraser.addEventListener("mousedown", () => {
     selectedColor = "ERASER";
+    root.style.setProperty("--selected-color", "#000000");
 });
 
 clear.addEventListener("mousedown", clearScreen);
 
 colorPicker.addEventListener("input", (e) => {
     selectedColor = e.target.value;
-    console.log(selectedColor);
+    root.style.setProperty("--selected-color", selectedColor);
 });
 
 /* Save grid */
@@ -131,7 +133,7 @@ const saveGridData = () => {
         for (j = 0; j < gridSize; j++) {
             let color = grid.childNodes[k].style.backgroundColor;
 
-            if (color) {
+            if (color && color != "rgb(0, 0, 0)") {
                 gridData.push([[i, j], color]);
             }
 
