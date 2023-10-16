@@ -4,6 +4,22 @@ const grid = document.getElementById("grid");
 const controls = document.getElementById("controls");
 let selectedColor = "";
 
+const createGrid = (() => {
+    for (let i = 0; i < gridSize * gridSize; i++) {
+        // Create cells
+        const cell = document.createElement("div");
+        cell.classList.add("grid-cell");
+        cell.id = `cell-${i}`;
+        grid.appendChild(cell);
+
+        // Desktop drawing
+        cell.addEventListener("mousedown", () => applyColor(cell));
+        cell.addEventListener("mouseover", (e) => {
+            if (e.buttons === 1) applyColor(cell); // Check hover and mouse click
+        });
+    }
+})();
+
 const applyColor = (cell) => {
     switch (selectedColor) {
         case "ERASER":
@@ -13,20 +29,6 @@ const applyColor = (cell) => {
             cell.style.backgroundColor = selectedColor;
     }
 };
-
-for (let i = 0; i < gridSize * gridSize; i++) {
-    // Create cells
-    const cell = document.createElement("div");
-    cell.classList.add("grid-cell");
-    cell.id = `cell-${i}`;
-    grid.appendChild(cell);
-
-    // Desktop drawing
-    cell.addEventListener("mousedown", () => applyColor(cell));
-    cell.addEventListener("mouseover", (e) => {
-        if (e.buttons === 1) applyColor(cell); // Check hover and mouse click
-    });
-}
 
 // Mobile drawing
 const draw = (touch) => {
@@ -80,19 +82,21 @@ const colors = {
     23: "#686a6b",
 };
 
-for (let i = 0; i < 24; i++) {
-    const colorCell = document.createElement("div");
-    colorCell.classList.add("color-cell");
-    colorCell.id = `color-${i}`;
+const createColorsGrid = (() => {
+    for (let i = 0; i < 24; i++) {
+        const colorCell = document.createElement("div");
+        colorCell.classList.add("color-cell");
+        colorCell.id = `color-${i}`;
 
-    colorCell.style.backgroundColor = colors[i];
-    colorCell.addEventListener("mousedown", () => {
-        selectedColor = `${colors[i]}`;
-        console.log(selectedColor);
-    });
+        colorCell.style.backgroundColor = colors[i];
+        colorCell.addEventListener("mousedown", () => {
+            selectedColor = `${colors[i]}`;
+            console.log(selectedColor);
+        });
 
-    controls.appendChild(colorCell);
-}
+        controls.appendChild(colorCell);
+    }
+})();
 
 /* Botones Controles*/
 
@@ -119,7 +123,7 @@ colorPicker.addEventListener("input", (e) => {
 
 /* Save grid */
 
-function saveGridData() {
+const saveGridData = () => {
     const gridData = [];
     let k = 0;
 
@@ -136,11 +140,9 @@ function saveGridData() {
     }
 
     return JSON.stringify(gridData);
-}
+};
 
-const saveButton = document.getElementById("save-btn");
-
-saveButton.addEventListener("click", () => {
+const saveGridJSON = () => {
     const gridDataJSON = saveGridData();
     const blob = new Blob([gridDataJSON], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -155,14 +157,16 @@ saveButton.addEventListener("click", () => {
     // Trigger a click event to download the file
     a.click();
 
-    // Clean up
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-});
+};
+
+const saveButton = document.getElementById("save-btn");
+saveButton.addEventListener("click", saveGridJSON);
 
 /* Load grid */
 
-function loadGridData(gridDataJSON) {
+const loadGridData = (gridDataJSON) => {
     const gridData = JSON.parse(gridDataJSON);
     console.log(gridData);
 
@@ -172,9 +176,9 @@ function loadGridData(gridDataJSON) {
         let pos = cell[0][0] * gridSize + cell[0][1];
         grid.childNodes[pos].style.backgroundColor = cell[1];
     });
-}
+};
 
-function loadGridDataFromFile(file) {
+const loadGridDataFromFile = (file) => {
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -183,10 +187,9 @@ function loadGridDataFromFile(file) {
     };
 
     reader.readAsText(file);
-}
+};
 
 const loadInput = document.getElementById("load-input");
-
 loadInput.addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (file) {
