@@ -25,11 +25,12 @@
 
 .grid-cell {
     border: 1px solid #ccc;
-    background-color: white;
+    background-color: #000000;
     border-radius: 10%;
     user-select: none;
 }
 
 .grid-cell:hover {
-    background-color: rgb(224, 224, 224);
+    opacity: 0.8;
+    background-color: var(--selected-color);
 }
