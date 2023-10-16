@@ -38,3 +38,9 @@
     justify-content: center;
     width: 90%;
 }
+
+/* Save/Load */
+
+#load-input {
+    display: none;
+}

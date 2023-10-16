@@ -1,3 +1,5 @@
+const gridSize = 16;
+
 const grid = document.getElementById("grid");
 const controls = document.getElementById("controls");
 let selectedColor = "";
@@ -12,7 +14,7 @@ const applyColor = (cell) => {
     }
 };
 
-for (let i = 0; i < 16 * 16; i++) {
+for (let i = 0; i < gridSize * gridSize; i++) {
     // Create cells
     const cell = document.createElement("div");
     cell.classList.add("grid-cell");
@@ -98,17 +100,96 @@ const eraser = document.getElementById("eraser");
 const clear = document.getElementById("clear");
 const colorPicker = document.getElementById("color-picker");
 
+const clearScreen = () => {
+    grid.childNodes.forEach((cell) => {
+        cell.style.backgroundColor = "";
+    });
+};
+
 eraser.addEventListener("mousedown", () => {
     selectedColor = "ERASER";
 });
 
-clear.addEventListener("mousedown", () => {
-    grid.childNodes.forEach((cell) => {
-        cell.style.backgroundColor = "";
-    });
-});
+clear.addEventListener("mousedown", clearScreen);
 
 colorPicker.addEventListener("input", (e) => {
     selectedColor = e.target.value;
     console.log(selectedColor);
+});
+
+/* Save grid */
+
+function saveGridData() {
+    const gridData = [];
+    let k = 0;
+
+    for (i = 0; i < gridSize; i++) {
+        for (j = 0; j < gridSize; j++) {
+            let color = grid.childNodes[k].style.backgroundColor;
+
+            if (color) {
+                gridData.push([[i, j], color]);
+            }
+
+            k++;
+        }
+    }
+
+    return JSON.stringify(gridData);
+}
+
+const saveButton = document.getElementById("save-btn");
+
+saveButton.addEventListener("click", () => {
+    const gridDataJSON = saveGridData();
+    const blob = new Blob([gridDataJSON], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    // Create a link to download the file
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "gridData.json";
+    a.style.display = "none";
+    document.body.appendChild(a);
+
+    // Trigger a click event to download the file
+    a.click();
+
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+/* Load grid */
+
+function loadGridData(gridDataJSON) {
+    const gridData = JSON.parse(gridDataJSON);
+    console.log(gridData);
+
+    clearScreen();
+
+    gridData.forEach((cell) => {
+        let pos = cell[0][0] * gridSize + cell[0][1];
+        grid.childNodes[pos].style.backgroundColor = cell[1];
+    });
+}
+
+function loadGridDataFromFile(file) {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+        const gridDataJSON = event.target.result;
+        loadGridData(gridDataJSON);
+    };
+
+    reader.readAsText(file);
+}
+
+const loadInput = document.getElementById("load-input");
+
+loadInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        loadGridDataFromFile(file);
+    }
 });

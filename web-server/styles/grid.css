@@ -1,3 +1,7 @@
+:root {
+    --grid-size: 16;
+}
+
 #grid-container {
     display: flex;
     height: 100%;
@@ -10,8 +14,8 @@
 #grid {
     justify-self: center;
     display: grid;
-    grid-template-columns: repeat(16, 1fr);
-    grid-template-rows: repeat(16, 1fr);
+    grid-template-columns: repeat(var(--grid-size), 1fr);
+    grid-template-rows: repeat(var(--grid-size), 1fr);
     width: clamp(320px, 50vw, 550px);
     height: clamp(320px, 50vw, 550px);
     background-color: #0c0c0c;
