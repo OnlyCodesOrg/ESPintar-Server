@@ -1,3 +1,28 @@
+/* Conexión con ESP32 */
+const initWebsocket = (() => {
+    let ws = new WebSocket("ws://" + window.location.hostname + ":80/");
+
+    ws.onmessage = (evt) => {
+        JSONobj = JSON.parse(evt.data);
+        button.innerHTML = JSONobj.LEDonoff;
+
+        if (JSONobj.LEDonoff == "ON") {
+            button.style.backgroundColor = "#ff0000";
+        } else {
+            button.style.backgroundColor = "#111111";
+        }
+    };
+})();
+
+const buttonClick = (button) => {
+    let state;
+    button.getAttribute("state") == "ON" ? (state = "OFF") : (state = "ON");
+    button.setAttribute("state", state);
+
+    console.log(state);
+    ws.send(state);
+};
+
 const gridSize = 16;
 
 const root = document.documentElement;
@@ -9,8 +34,12 @@ const createGrid = (() => {
     for (let i = 0; i < gridSize * gridSize; i++) {
         // Create cells
         const cell = document.createElement("div");
+        let button = cell;
         cell.classList.add("grid-cell");
         cell.id = `cell-${i}`;
+        cell.setAttribute("state", "OFF");
+
+        cell.addEventListener("click", () => buttonClick(button));
         grid.appendChild(cell);
 
         // Desktop drawing
