@@ -5,6 +5,8 @@ const initWebsocket = (() => {
     ws.onmessage = (evt) => {
         evtObj = json.parse(evt.data);
         console.log(evtObj);
+
+        loadGridData(evtObj);
     };
 })();
 
@@ -245,6 +247,7 @@ const loadGridDataFromFile = (file) => {
     reader.onload = (event) => {
         const gridDataJSON = event.target.result;
         loadGridData(gridDataJSON);
+        ws.send(gridDataJSON);
     };
 
     reader.readAsText(file);
