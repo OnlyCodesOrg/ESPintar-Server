@@ -32,6 +32,11 @@ const createGrid = (() => {
 })();
 
 const applyColor = (cell) => {
+    const cellID = parseInt(cell.id.match(/\d+/)[0]);
+    const i = cellID % gridSize;
+    const j = Math.floor(cellID / gridSize);
+    let data;
+
     switch (selectedColor) {
         case "ERASER":
             cell.style.backgroundColor = "";
@@ -40,23 +45,27 @@ const applyColor = (cell) => {
             cell.style.backgroundColor = selectedColor;
     }
 
-    const cellID = parseInt(cell.id.match(/\d+/)[0]);
-    const cellColor = cell.style.backgroundColor;
+    if (selectedColor == "ERASER") {
+        data = [
+            [i, j],
+            [0, 0, 0],
+        ];
+    }
 
-    const i = cellID % gridSize;
-    const j = Math.floor(cellID / gridSize);
+    if (cell.style.backgroundColor) {
+        const cellColor = cell.style.backgroundColor;
+        let rgbValues = cellColor.slice(4, -1);
+        let rgbArray = rgbValues.split(", ").map(Number);
 
-    let rgbValues = cellColor.slice(4, -1);
-    let rgbArray = rgbValues.split(", ").map(Number);
+        var red = rgbArray[0];
+        var green = rgbArray[1];
+        var blue = rgbArray[2];
 
-    var red = rgbArray[0];
-    var green = rgbArray[1];
-    var blue = rgbArray[2];
-
-    const data = [
-        [i, j],
-        [red, green, blue],
-    ];
+        data = [
+            [i, j],
+            [red, green, blue],
+        ];
+    }
 
     ws.send(JSON.stringify(data));
     console.log(JSON.stringify(data));
@@ -141,7 +150,9 @@ const clearScreen = () => {
         cell.style.backgroundColor = "";
     });
 
-    ws.send("LIMPIAR");
+    const data = JSON.stringify("LIMPIAR");
+    ws.send(data);
+    console.log(data);
 };
 
 eraser.addEventListener("mousedown", () => {
