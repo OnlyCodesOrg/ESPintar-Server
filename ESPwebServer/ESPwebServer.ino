@@ -8,7 +8,6 @@
 const int matrixSize = 16;
 const int numberOfLEDs = matrixSize * matrixSize;
 
-
 #define PIN 2 // Pin de la matriz de LEDs.
 #define NUM_PIXELS 256
 
@@ -20,6 +19,7 @@ struct RGBColor
   uint8_t green;
   uint8_t blue;
 };
+RGBColor matriz[16][16];
 
 //------------------Servidor Web en puerto 80---------------------
 
@@ -62,7 +62,7 @@ void setup()
     server.on("/", webpage);
     server.begin();
     webSocket.begin();
-    webSocket.onEvent(webSocketEvent);
+    webSocket.onEvent(webSocketEvent());
   }
   else
   {
@@ -88,12 +88,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
 {
   if (type == WStype_TEXT)
   {
- 
-      Serial.println("Received WebSocket message:");
+
+    Serial.println("Received WebSocket message:");
     Serial.println((char *)payload);
 
     // Parse the JSON message
-    DynamicJsonDocument doc(20000);
+    DynamicJsonDocument doc(10000);
     DeserializationError error = deserializeJson(doc, (char *)payload);
 
     if (error)
@@ -102,11 +102,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
       Serial.println(error.c_str());
       return;
     }
+
     uint32_t color;
-    int x, y, pixelNum;
+    uint8_t x, y, pixelNum;
     RGBColor cRGB;
-    const char* strPayload = doc.as<const char*>();
+    const char *strPayload = doc.as<const char *>();
     String strPayloadString = strPayload;
+    String jsonStr;
+
     if (doc[0][0].is<JsonArray>())
     {
       Serial.print("Matriz recibida");
@@ -120,36 +123,43 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
         cRGB.red = doc[i][1][0];
         cRGB.green = doc[i][1][1];
         cRGB.blue = doc[i][1][2];
+        matriz[x][y] = cRGB; // Matriz local
+        pixelNum = calcPixelNum(x, y);
 
-        pixelNum = x + y * matrixSize;
-        if(y%2!=0)
-        { 
-          pixelNum=(15-x)+y*matrixSize;
-        }
         color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
-
         strip.setPixelColor(pixelNum, color);
       }
+      enviarMatriz(); // Enviar matriz a otros clientes
     }
     else if (doc[0].is<JsonArray>())
     {
       Serial.print("Pixel recibido");
+      DynamicJsonDocument docPixel(512);
+      JsonArray pixelArray = docPixel.to<JsonArray>();
 
       x = doc[0][0];
       y = doc[0][1];
       cRGB.red = doc[1][0];
       cRGB.green = doc[1][1];
       cRGB.blue = doc[1][2];
+      matriz[x][y] = cRGB; // Matriz local
+      pixelNum = calcPixelNum(x, y);
 
-      pixelNum = x + y * matrixSize;
-      if(y%2!=0)
-      { 
-        pixelNum=(15-x)+y*matrixSize;
-      }
       color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
-
       strip.setPixelColor(pixelNum, color);
-      
+
+      // Envia pixel a otros clientes
+      JsonArray pixelPos = pixelArray.createNestedArray();
+      pixelPos.add(x);
+      pixelPos.add(y);
+
+      JsonArray pixelRGB = pixelArray.createNestedArray();
+      pixelRGB.add(matriz[x][y].red);
+      pixelRGB.add(matriz[x][y].green);
+      pixelRGB.add(matriz[x][y].blue);
+
+      serializeJson(pixelArray, jsonStr);
+      webSocket.sendTXT(jsonStr);
     }
     else if (doc.is<const char *>()) // Check for a string
     {
@@ -157,41 +167,58 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
 
       const char *strPayload = doc.as<const char *>();
 
-     if (strcmp(strPayload, "LIMPIAR") == 0)
-     {
-      Serial.println("LIMPIANDO MATRIZ");
-      strip.clear();
-      
-     }
+      if (strcmp(strPayload, "LIMPIAR") == 0)
+      {
+        Serial.println("LIMPIANDO MATRIZ");
+        strip.clear();
+
+        webSocket.sendTXT("LIMPIAR");
+      }
     }
   }
+  else if (type == WStype_CONNECTED)
+  {
+    enviarMatriz();
+  }
   strip.show();
-//  else if (type == WStype_CONNECTED)
-//  {
-//    StaticJsonDocument<8196> doc;
-//    JsonArray matrixArray = doc.to<JsonArray>();
-//
-//    for (int x = 0; x < matrixSize; x++)
-//    {
-//      for (int y = 0; y < matrixSize; y++)
-//      {
-//        // Pixel
-//        JsonArray ledArray = doc.createNestedArray();
-//
-//        // Coordenadas
-//        JsonArray coordinatesArray = ledArray.createNestedArray();
-//        coordinatesArray.add(x);
-//        coordinatesArray.add(y);
-//
-//        // RGB
-//        JsonArray colorArray = ledArray.createNestedArray();
-//        colorArray.add(matrix[x][y].red);
-//        colorArray.add(matrix[x][y].green);
-//        colorArray.add(matrix[x][y].blue);
-//      }
-//    }
-//    String jsonStr;
-//    serializeJson(doc, jsonStr);
-//    webSocket.sendTXT(jsonStr);
-//  }
+}
+
+void enviarMatriz()
+{
+  DynamicJsonDocument docGrid(10000);
+  JsonArray matrixArray = docGrid.to<JsonArray>();
+
+  for (x = 0; x < matrixSize; x++)
+  {
+    for (y = 0; y < matrixSize; y++)
+    {
+      if (matriz[x][y])
+      {
+        JsonArray ledArray = docGrid.createNestedArray();
+
+        JsonArray pos = ledArray.createNestedArray();
+        pos.add(x);
+        pos.add(y);
+
+        JsonArray rgb = ledArray.createNestedArray();
+        rgb.add(matriz[x][y].red);
+        rgb.add(matriz[x][y].green);
+        rgb.add(matriz[x][y].blue);
+      }
+    }
+  }
+
+  serializeJson(matrixArray, jsonStr);
+  webSocket.sendTXT(jsonStr);
+}
+
+uint8_t calcPixelNum(uint8_t x, uint8_t y)
+{
+  uint8_t pixelNum = x + y * matrixSize;
+  if (y % 2 != 0)
+  {
+    pixelNum = (15 - x) + y * matrixSize;
+  }
+
+  return pixelNum;
 }

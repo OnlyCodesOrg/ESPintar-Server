@@ -3,10 +3,30 @@ const ws = new WebSocket("ws://" + window.location.hostname + ":81/");
 /* Conexión con ESP32 */
 const initWebsocket = (() => {
     ws.onmessage = (evt) => {
-        evtObj = json.parse(evt.data);
-        console.log(evtObj);
+        evtJSON = json.parse(evt.data);
+        console.log(evtJSON);
 
-        loadGridData(evtObj);
+        if (Array.isArray(evtJSON[0][0])) {
+            // Cargar matriz desde otro cliente
+            loadGridData(evtJSON);
+        } else if (Array.isArray(evtJSON[0])) {
+            // Aplicar color desde otro cliente
+            let i = cell[0][0];
+            let j = cell[0][1];
+            let id = i * gridSize + j;
+
+            let red = cell[1][0];
+            let green = cell[1][1];
+            let blue = cell[1][2];
+
+            const cellID = document.getElementById(`cell-${id}`);
+            cellID.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+        } else if (evtJSON == "LIMPIAR") {
+            // Limpiar pantalla desde otro cliente
+            grid.childNodes.forEach((cell) => {
+                cell.style.backgroundColor = "";
+            });
+        }
     };
 })();
 
@@ -34,10 +54,11 @@ const createGrid = (() => {
 })();
 
 const applyColor = (cell) => {
+    let i, j, data;
+
     const cellID = parseInt(cell.id.match(/\d+/)[0]);
-    const i = cellID % gridSize;
-    const j = Math.floor(cellID / gridSize);
-    let data;
+    i = cellID % gridSize;
+    j = Math.floor(cellID / gridSize);
 
     switch (selectedColor) {
         case "ERASER":
@@ -59,9 +80,9 @@ const applyColor = (cell) => {
         let rgbValues = cellColor.slice(4, -1);
         let rgbArray = rgbValues.split(", ").map(Number);
 
-        var red = rgbArray[0];
-        var green = rgbArray[1];
-        var blue = rgbArray[2];
+        let red = rgbArray[0];
+        let green = rgbArray[1];
+        let blue = rgbArray[2];
 
         data = [
             [i, j],
