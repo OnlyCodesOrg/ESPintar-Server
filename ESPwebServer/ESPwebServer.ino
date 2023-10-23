@@ -25,6 +25,7 @@ RGBColor matriz[16][16];
 
 WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
+
 //---------------------Credenciales de WiFi-----------------------
 
 const char *ssid = "IZZI-414B_EXT2";
@@ -62,7 +63,7 @@ void setup()
     server.on("/", webpage);
     server.begin();
     webSocket.begin();
-    webSocket.onEvent(webSocketEvent());
+    webSocket.onEvent(webSocketEvent);
   }
   else
   {
@@ -108,7 +109,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
     RGBColor cRGB;
     const char *strPayload = doc.as<const char *>();
     String strPayloadString = strPayload;
-    String jsonStr;
 
     if (doc[0][0].is<JsonArray>())
     {
@@ -129,7 +129,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
         color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
         strip.setPixelColor(pixelNum, color);
       }
-      enviarMatriz(); // Enviar matriz a otros clientes
+      enviarMatriz(num); // Enviar matriz a otros clientes
     }
     else if (doc[0].is<JsonArray>())
     {
@@ -158,8 +158,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
       pixelRGB.add(matriz[x][y].green);
       pixelRGB.add(matriz[x][y].blue);
 
-      serializeJson(pixelArray, jsonStr);
-      webSocket.sendTXT(jsonStr);
+      String jsonStr;
+      serializeJson(docPixel, jsonStr);
+      char payloadBuffer[jsonStr.length() + 1];
+      jsonStr.toCharArray(payloadBuffer, sizeof(payloadBuffer));
+      webSocket.sendTXT(num, payloadBuffer);
     }
     else if (doc.is<const char *>()) // Check for a string
     {
@@ -172,27 +175,30 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
         Serial.println("LIMPIANDO MATRIZ");
         strip.clear();
 
-        webSocket.sendTXT("LIMPIAR");
+        String jsonStr = "LIMPIAR";
+        char payloadBuffer[jsonStr.length() + 1];
+        jsonStr.toCharArray(payloadBuffer, sizeof(payloadBuffer));
+        webSocket.sendTXT(num, payloadBuffer);
       }
     }
   }
   else if (type == WStype_CONNECTED)
   {
-    enviarMatriz();
+    enviarMatriz(num);
   }
   strip.show();
 }
 
-void enviarMatriz()
+void enviarMatriz(uint8_t num)
 {
   DynamicJsonDocument docGrid(10000);
   JsonArray matrixArray = docGrid.to<JsonArray>();
 
-  for (x = 0; x < matrixSize; x++)
+  for (int x = 0; x < matrixSize; x++)
   {
-    for (y = 0; y < matrixSize; y++)
+    for (int y = 0; y < matrixSize; y++)
     {
-      if (matriz[x][y])
+      if (matriz[x][y].red != 0 && matriz[x][y].green != 0 && matriz[x][y].blue != 0)
       {
         JsonArray ledArray = docGrid.createNestedArray();
 
@@ -208,8 +214,11 @@ void enviarMatriz()
     }
   }
 
-  serializeJson(matrixArray, jsonStr);
-  webSocket.sendTXT(jsonStr);
+  String jsonStr;
+  serializeJson(docGrid, jsonStr);
+  char payloadBuffer[jsonStr.length() + 1];
+  jsonStr.toCharArray(payloadBuffer, sizeof(payloadBuffer));
+  webSocket.sendTXT(num, payloadBuffer);
 }
 
 uint8_t calcPixelNum(uint8_t x, uint8_t y)
