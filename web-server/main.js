@@ -1,35 +1,5 @@
 const ws = new WebSocket("ws://" + window.location.hostname + ":81/");
 
-/* Conexión con ESP32 */
-const initWebsocket = (() => {
-    ws.onmessage = (evt) => {
-        evtJSON = json.parse(evt.data);
-        console.log(evtJSON);
-
-        if (Array.isArray(evtJSON[0][0])) {
-            // Cargar matriz desde otro cliente
-            loadGridData(evtJSON);
-        } else if (Array.isArray(evtJSON[0])) {
-            // Aplicar color desde otro cliente
-            let i = cell[0][0];
-            let j = cell[0][1];
-            let id = i * gridSize + j;
-
-            let red = cell[1][0];
-            let green = cell[1][1];
-            let blue = cell[1][2];
-
-            const cellID = document.getElementById(`cell-${id}`);
-            cellID.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
-        } else if (evtJSON == "LIMPIAR") {
-            // Limpiar pantalla desde otro cliente
-            grid.childNodes.forEach((cell) => {
-                cell.style.backgroundColor = "";
-            });
-        }
-    };
-})();
-
 const gridSize = 16;
 
 const root = document.documentElement;
@@ -51,6 +21,44 @@ const createGrid = (() => {
             if (e.buttons === 1) applyColor(cell); // Check hover and mouse click
         });
     }
+})();
+
+/* Conexión con ESP32 */
+const initWebsocket = (() => {
+    ws.onmessage = (evtJSON) => {
+        console.log(evtJSON);
+
+        const data = evtJSON.data;
+        console.log(data);
+
+        if (Array.isArray(data[0][0])) {
+            // Cargar matriz desde otro cliente
+            loadGridData(data);
+            return;
+        }
+
+        if (Array.isArray(data[0])) {
+            let i = data[0][1];
+            let j = data[0][0];
+            let id = j * gridSize + i;
+
+            let red = data[1][0];
+            let green = data[1][1];
+            let blue = data[1][2];
+
+            console.log(id);
+            const cellID = document.getElementById(`cell-${id}`);
+            console.log(cellID);
+            cellID.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+        }
+
+        if (data == "LIMPIAR") {
+            // Limpiar pantalla desde otro cliente
+            grid.childNodes.forEach((cell) => {
+                cell.style.backgroundColor = "";
+            });
+        }
+    };
 })();
 
 const applyColor = (cell) => {
@@ -169,13 +177,13 @@ const clear = document.getElementById("clear");
 const colorPicker = document.getElementById("color-picker");
 
 const clearScreen = () => {
-    grid.childNodes.forEach((cell) => {
-        cell.style.backgroundColor = "";
-    });
-
     const data = JSON.stringify("LIMPIAR");
     ws.send(data);
     console.log(data);
+
+    grid.childNodes.forEach((cell) => {
+        cell.style.backgroundColor = "";
+    });
 };
 
 eraser.addEventListener("mousedown", () => {
@@ -251,7 +259,6 @@ saveButton.addEventListener("click", saveGridJSON);
 const loadGridData = (gridDataJSON) => {
     const gridData = JSON.parse(gridDataJSON);
     console.log(gridData);
-
     clearScreen();
 
     gridData.forEach((cell) => {

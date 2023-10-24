@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WebSocketsServer.h>
+#include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 #include "Web.h"
@@ -10,6 +11,16 @@ const int numberOfLEDs = matrixSize * matrixSize;
 
 #define PIN 2 // Pin de la matriz de LEDs.
 #define NUM_PIXELS 256
+
+#define MAX_CLIENTS 10
+
+struct ClientInfo
+{
+  uint8_t client;
+  bool available;
+};
+
+ClientInfo clients[MAX_CLIENTS];
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(numberOfLEDs, PIN, NEO_GRB + NEO_KHZ800);
 
@@ -70,6 +81,12 @@ void setup()
     Serial.println("");
     Serial.println("Error de conexion");
   }
+
+  // Inicializar lista de clientes
+  for (int i = 0; i < MAX_CLIENTS; i++)
+  {
+    clients[i].available = false; // Initially mark all clients as unavailable
+  }
 }
 
 //----------------------------LOOP----------------------------------
@@ -85,11 +102,22 @@ void webpage()
   server.send(200, "text/html", pagina);
 }
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welength)
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
+  if (type == WStype_CONNECTED) {
+    enviarMatriz();
+    handleNewClient();
+    return;
+  }
+
+  if (type == WStype_DISCONNECTED) {
+    Serial.print("Cliente desconectado...");
+    clients[num].available = false;
+    return;
+  }
+
   if (type == WStype_TEXT)
   {
-
     Serial.println("Received WebSocket message:");
     Serial.println((char *)payload);
 
@@ -124,12 +152,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
         cRGB.green = doc[i][1][1];
         cRGB.blue = doc[i][1][2];
         matriz[x][y] = cRGB; // Matriz local
+
         pixelNum = calcPixelNum(x, y);
 
         color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
         strip.setPixelColor(pixelNum, color);
       }
-      enviarMatriz(num); // Enviar matriz a otros clientes
+      enviarMatriz(); // Enviar matriz a otros clientes
     }
     else if (doc[0].is<JsonArray>())
     {
@@ -142,7 +171,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
       cRGB.red = doc[1][0];
       cRGB.green = doc[1][1];
       cRGB.blue = doc[1][2];
+
       matriz[x][y] = cRGB; // Matriz local
+
       pixelNum = calcPixelNum(x, y);
 
       color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
@@ -160,9 +191,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
 
       String jsonStr;
       serializeJson(docPixel, jsonStr);
-      char payloadBuffer[jsonStr.length() + 1];
-      jsonStr.toCharArray(payloadBuffer, sizeof(payloadBuffer));
-      webSocket.sendTXT(num, payloadBuffer);
+
+      for (int i = 0; i < MAX_CLIENTS; i++)
+      {
+        if (clients[i].available)
+        {
+          webSocket.sendTXT(i, jsonStr);
+        }
+      }
     }
     else if (doc.is<const char *>()) // Check for a string
     {
@@ -176,21 +212,23 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t welengt
         strip.clear();
 
         String jsonStr = "LIMPIAR";
-        char payloadBuffer[jsonStr.length() + 1];
-        jsonStr.toCharArray(payloadBuffer, sizeof(payloadBuffer));
-        webSocket.sendTXT(num, payloadBuffer);
+
+        for (int i = 0; i < MAX_CLIENTS; i++)
+        {
+          if (clients[i].available)
+          {
+            webSocket.sendTXT(i, jsonStr);
+          }
+        }
       }
     }
-  }
-  else if (type == WStype_CONNECTED)
-  {
-    enviarMatriz(num);
   }
   strip.show();
 }
 
-void enviarMatriz(uint8_t num)
+void enviarMatriz()
 {
+  Serial.println("Enviando Matriz...");
   DynamicJsonDocument docGrid(10000);
   JsonArray matrixArray = docGrid.to<JsonArray>();
 
@@ -216,9 +254,14 @@ void enviarMatriz(uint8_t num)
 
   String jsonStr;
   serializeJson(docGrid, jsonStr);
-  char payloadBuffer[jsonStr.length() + 1];
-  jsonStr.toCharArray(payloadBuffer, sizeof(payloadBuffer));
-  webSocket.sendTXT(num, payloadBuffer);
+
+  for (int i = 0; i < MAX_CLIENTS; i++)
+  {
+    if (clients[i].available)
+    {
+      webSocket.sendTXT(i, jsonStr);
+    }
+  }
 }
 
 uint8_t calcPixelNum(uint8_t x, uint8_t y)
@@ -230,4 +273,18 @@ uint8_t calcPixelNum(uint8_t x, uint8_t y)
   }
 
   return pixelNum;
+}
+
+void handleNewClient()
+{
+  Serial.println("Cliente Conectado");
+
+  for (int i = 0; i < MAX_CLIENTS; i++)
+  {
+    if (!clients[i].available)
+    {
+      clients[i].available = true;
+      return;
+    }
+  }
 }
