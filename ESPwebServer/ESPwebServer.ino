@@ -39,8 +39,8 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 //---------------------Credenciales de WiFi-----------------------
 
-const char *ssid = "IZZI-414B_EXT2";
-const char *password = "F88B373A414B";
+const char *ssid = "ESPintar";
+const char *password = "";
 
 //---------------------VARIABLES GLOBALES-------------------------
 int contconexion = 0;
@@ -87,6 +87,8 @@ void setup()
   {
     clients[i].available = false; // Initially mark all clients as unavailable
   }
+
+  strip.setBrightness(50);
 }
 
 //----------------------------LOOP----------------------------------
@@ -105,8 +107,8 @@ void webpage()
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
   if (type == WStype_CONNECTED) {
-    enviarMatriz();
     handleNewClient();
+    enviarMatriz();
     return;
   }
 
@@ -122,7 +124,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     Serial.println((char *)payload);
 
     // Parse the JSON message
-    DynamicJsonDocument doc(10000);
+    DynamicJsonDocument doc(40000);
     DeserializationError error = deserializeJson(doc, (char *)payload);
 
     if (error)
@@ -141,13 +143,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     if (doc[0][0].is<JsonArray>())
     {
       Serial.print("Matriz recibida");
+      clearMatrix();
 
       size_t arrayLength = doc.size();
 
       for (size_t i = 0; i < arrayLength; i++)
       {
-        x = doc[i][0][0];
-        y = doc[i][0][1];
+        x = doc[i][0][1];
+        y = doc[i][0][0];
         cRGB.red = doc[i][1][0];
         cRGB.green = doc[i][1][1];
         cRGB.blue = doc[i][1][2];
@@ -156,7 +159,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         pixelNum = calcPixelNum(x, y);
 
         color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
-        strip.setPixelColor(pixelNum, color);
+        strip.setPixelColor(NUM_PIXELS - pixelNum - 1, color);
       }
       enviarMatriz(); // Enviar matriz a otros clientes
     }
@@ -177,7 +180,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
       pixelNum = calcPixelNum(x, y);
 
       color = strip.Color(cRGB.red, cRGB.green, cRGB.blue);
-      strip.setPixelColor(pixelNum, color);
+      strip.setPixelColor(NUM_PIXELS - pixelNum - 1, color);
 
       // Envia pixel a otros clientes
       JsonArray pixelPos = pixelArray.createNestedArray();
@@ -209,8 +212,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
       if (strcmp(strPayload, "LIMPIAR") == 0)
       {
         Serial.println("LIMPIANDO MATRIZ");
-        strip.clear();
-
+        clearMatrix();
+        
         String jsonStr = "LIMPIAR";
 
         for (int i = 0; i < MAX_CLIENTS; i++)
@@ -229,14 +232,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 void enviarMatriz()
 {
   Serial.println("Enviando Matriz...");
-  DynamicJsonDocument docGrid(10000);
+  DynamicJsonDocument docGrid(40000);
   JsonArray matrixArray = docGrid.to<JsonArray>();
 
   for (int x = 0; x < matrixSize; x++)
   {
     for (int y = 0; y < matrixSize; y++)
     {
-      if (matriz[x][y].red != 0 && matriz[x][y].green != 0 && matriz[x][y].blue != 0)
+      if (!(matriz[x][y].red == 0 && matriz[x][y].green == 0 && matriz[x][y].blue == 0))
       {
         JsonArray ledArray = docGrid.createNestedArray();
 
@@ -266,13 +269,11 @@ void enviarMatriz()
 
 uint8_t calcPixelNum(uint8_t x, uint8_t y)
 {
-  uint8_t pixelNum = x + y * matrixSize;
-  if (y % 2 != 0)
-  {
-    pixelNum = (15 - x) + y * matrixSize;
+  if (y % 2 == 0) {
+    return x + y * matrixSize;
+  } else {
+    return (matrixSize - 1 - x) + y * matrixSize;
   }
-
-  return pixelNum;
 }
 
 void handleNewClient()
@@ -285,6 +286,23 @@ void handleNewClient()
     {
       clients[i].available = true;
       return;
+    }
+  }
+}
+
+void clearMatrix()
+{
+  strip.clear();
+  RGBColor ledVacio;
+  ledVacio.red = 0;
+  ledVacio.blue = 0;
+  ledVacio.green = 0;
+
+  for (int i = 0; i < matrixSize; i++)
+  {
+    for (int j = 0; j < matrixSize; j++)
+    {
+      matriz[i][j] = ledVacio;
     }
   }
 }
