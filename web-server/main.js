@@ -1,15 +1,5 @@
 const ws = new WebSocket("ws://" + window.location.hostname + ":81/");
 
-/* Conexión con ESP32 */
-const initWebsocket = (() => {
-    ws.onmessage = (evt) => {
-        evtObj = json.parse(evt.data);
-        console.log(evtObj);
-
-        loadGridData(evtObj);
-    };
-})();
-
 const gridSize = 16;
 
 const root = document.documentElement;
@@ -33,11 +23,50 @@ const createGrid = (() => {
     }
 })();
 
+/* Conexión con ESP32 */
+const initWebsocket = (() => {
+    ws.onmessage = (evt) => {
+        console.log(evt);
+
+        if (evt.data == "LIMPIAR") {
+            grid.childNodes.forEach((cell) => {
+                cell.style.backgroundColor = "";
+            });
+            return;
+        }
+
+        const dataJSON = JSON.parse(evt.data);
+
+        if (Array.isArray(dataJSON[0][0])) {
+            // Cargar matriz desde otro cliente
+            console.log("Matriz recibida...");
+            loadGridData(dataJSON);
+            return;
+        }
+
+        if (Array.isArray(dataJSON[0])) {
+            console.log("Pixel recibido...");
+            let i = dataJSON[0][0];
+            let j = dataJSON[0][1];
+            let id = j * gridSize + i;
+
+            let red = dataJSON[1][0];
+            let green = dataJSON[1][1];
+            let blue = dataJSON[1][2];
+
+            const cellID = document.getElementById(`cell-${id}`);
+            cellID.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+            return;
+        }
+    };
+})();
+
 const applyColor = (cell) => {
+    let i, j, data;
+
     const cellID = parseInt(cell.id.match(/\d+/)[0]);
-    const i = cellID % gridSize;
-    const j = Math.floor(cellID / gridSize);
-    let data;
+    i = cellID % gridSize;
+    j = Math.floor(cellID / gridSize);
 
     switch (selectedColor) {
         case "ERASER":
@@ -59,9 +88,9 @@ const applyColor = (cell) => {
         let rgbValues = cellColor.slice(4, -1);
         let rgbArray = rgbValues.split(", ").map(Number);
 
-        var red = rgbArray[0];
-        var green = rgbArray[1];
-        var blue = rgbArray[2];
+        let red = rgbArray[0];
+        let green = rgbArray[1];
+        let blue = rgbArray[2];
 
         data = [
             [i, j],
@@ -70,7 +99,6 @@ const applyColor = (cell) => {
     }
 
     ws.send(JSON.stringify(data));
-    console.log(JSON.stringify(data));
 };
 
 // Mobile drawing
@@ -148,13 +176,13 @@ const clear = document.getElementById("clear");
 const colorPicker = document.getElementById("color-picker");
 
 const clearScreen = () => {
+    const data = JSON.stringify("LIMPIAR");
+
     grid.childNodes.forEach((cell) => {
         cell.style.backgroundColor = "";
     });
 
-    const data = JSON.stringify("LIMPIAR");
     ws.send(data);
-    console.log(data);
 };
 
 eraser.addEventListener("mousedown", () => {
@@ -228,13 +256,12 @@ saveButton.addEventListener("click", saveGridJSON);
 /* Load grid */
 
 const loadGridData = (gridDataJSON) => {
-    const gridData = JSON.parse(gridDataJSON);
-    console.log(gridData);
+    grid.childNodes.forEach((cell) => {
+        cell.style.backgroundColor = "";
+    });
 
-    clearScreen();
-
-    gridData.forEach((cell) => {
-        let pos = cell[0][0] * gridSize + cell[0][1];
+    gridDataJSON.forEach((cell) => {
+        let pos = cell[0][1] * gridSize + cell[0][0];
         grid.childNodes[
             pos
         ].style.backgroundColor = `rgb(${cell[1][0]}, ${cell[1][1]}, ${cell[1][2]})`;
@@ -245,9 +272,10 @@ const loadGridDataFromFile = (file) => {
     const reader = new FileReader();
 
     reader.onload = (event) => {
-        const gridDataJSON = event.target.result;
+        const gridData = event.target.result;
+        const gridDataJSON = JSON.parse(gridData);
         loadGridData(gridDataJSON);
-        ws.send(gridDataJSON);
+        ws.send(gridData);
     };
 
     reader.readAsText(file);
