@@ -6,6 +6,56 @@ const root = document.documentElement;
 const grid = document.getElementById("grid");
 const controls = document.getElementById("controls");
 let selectedColor = "";
+let video;
+let canvas;
+let canvasContext;
+
+function onOpenCvReady() {
+    video = document.getElementById("camera");
+    canvas = document.createElement("canvas");
+    canvasContext = canvas.getContext("2d");
+    canvas.width = gridSize;
+    canvas.height = gridSize;
+
+    // Start video stream
+    navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then(function (stream) {
+            video.srcObject = stream;
+        })
+        .catch(function (error) {
+            console.log("getUserMedia error: " + error);
+        });
+
+    video.addEventListener("canplay", function () {
+        setInterval(processCamera, 1000 / 10); // frame rate
+    });
+}
+
+// Process the camera feed and update the grid
+function processCamera() {
+    canvasContext.drawImage(video, 0, 0, gridSize, gridSize);
+    const imageData = canvasContext.getImageData(0, 0, gridSize, gridSize);
+    const data = imageData.data;
+
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const idx = (j * gridSize + i) * 4;
+
+            const red = data[idx];
+            const green = data[idx + 1];
+            const blue = data[idx + 2];
+            const cell = document.getElementById(`cell-${i + j * gridSize}`);
+            cell.style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+
+            const pixelData = [
+                [i, j],
+                [red, green, blue],
+            ];
+            // ws.send(JSON.stringify(pixelData));
+        }
+    }
+}
 
 const createGrid = (() => {
     for (let i = 0; i < gridSize * gridSize; i++) {

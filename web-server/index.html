@@ -6,6 +6,13 @@
         <link rel="stylesheet" href="./styles/style.css" />
         <link rel="stylesheet" href="./styles/grid.css" />
         <link rel="stylesheet" href="./styles/controls.css" />
+        <script
+            async
+            src="https://docs.opencv.org/master/opencv.js"
+            onload="onOpenCvReady();"
+            type="text/javascript"
+        ></script>
+
         <title>ESPintar</title>
     </head>
     <body>
@@ -38,9 +45,9 @@
             </div>
             <div id="grid-container">
                 <div id="grid"></div>
+                <video id="camera" width="320" height="240" autoplay></video>
             </div>
         </div>
-
-        <script type="module" src="./main.js" defer></script>
+        <script defer src="./main.js"></script>
     </body>
 </html>
