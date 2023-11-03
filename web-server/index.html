@@ -5,49 +5,29 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="./styles/style.css" />
         <link rel="stylesheet" href="./styles/grid.css" />
-        <link rel="stylesheet" href="./styles/controls.css" />
-        <script
-            async
-            src="https://docs.opencv.org/master/opencv.js"
-            onload="onOpenCvReady();"
-            type="text/javascript"
-        ></script>
 
-        <title>ESPintar</title>
+        <title>ESPintar OpenCV</title>
     </head>
     <body>
         <header>
-            <h1 class="title">ESPintar</h1>
+            <h1 class="title">ESPintarCV</h1>
         </header>
 
         <div id="content">
-            <div id="controls-container">
-                <div id="controls"></div>
-                <div class="controls-btn-container">
-                    <button id="eraser" class="controls-btn">Borrador</button>
-                    <button id="clear" class="controls-btn">Limpiar</button>
-                    <input
-                        type="color"
-                        id="color-picker"
-                        class="controls-btn"
-                    />
-                </div>
-                <div class="saveload-container">
-                    <div id="save-btn">Save Grid</div>
-                    <label for="load-input">Upload Grid</label>
-                    <input
-                        type="file"
-                        id="load-input"
-                        accept=".json"
-                        name="load-input"
-                    />
-                </div>
-            </div>
             <div id="grid-container">
                 <div id="grid"></div>
-                <video id="camera" width="320" height="240" autoplay></video>
+            </div>
+            <div id="camera-container">
+                <video id="camera" width="500" autoplay playsinline></video>
             </div>
         </div>
+
         <script defer src="./main.js"></script>
+        <script
+            async
+            src="opencv.js"
+            onload="onOpenCvReady();"
+            type="text/javascript"
+        ></script>
     </body>
 </html>

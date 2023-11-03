@@ -11,7 +11,7 @@ body {
 
 header {
     display: grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 1fr;
     background: #0c0c0c;
     color: white;
     height: 10svh;
@@ -21,7 +21,6 @@ header {
 .title {
     display: flex;
     justify-content: center;
-    grid-column: 2;
 }
 
 #content {
@@ -29,7 +28,13 @@ header {
     justify-content: center;
     align-items: center;
     height: 90svh;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 1fr 1fr;
+}
+
+#camera-container {
+    display: grid;
+    justify-content: center;
+    align-items: center;
 }
 
 @media only screen and (max-width: 768px) {
